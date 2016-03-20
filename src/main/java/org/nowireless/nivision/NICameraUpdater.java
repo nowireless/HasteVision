@@ -1,9 +1,13 @@
 package org.nowireless.nivision;
 
+import org.nowireless.configstore.ConfigStore;
+import org.nowireless.nivision.config.NICameraUpdaterConfig;
+import org.nowireless.nivision.config.NICameraUpdaterConfigStore;
 import org.nowireless.vision.api.imagedriver.annotation.IDriver;
 import org.nowireless.vision.runtime.imagedriver.ImageDriverAbstract;
 
 import com.ni.vision.NIVision;
+import com.ni.vision.VisionException;
 import com.ni.vision.NIVision.IMAQdxCameraControlMode;
 import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
@@ -28,8 +32,19 @@ public class NICameraUpdater extends ImageDriverAbstract {
 
 	@Override
 	public void init() {
-		session = NIVision.IMAQdxOpenCamera("cam2", IMAQdxCameraControlMode.CameraControlModeController);
+		NICameraUpdaterConfigStore store = new NICameraUpdaterConfigStore();
+		store.init();
+		NICameraUpdaterConfig config = store.get(ConfigStore.INSTANCE);
+		if(config == null) {
+			config = store.create(ConfigStore.INSTANCE);
+		}
 		
+		try {
+			session = NIVision.IMAQdxOpenCamera(config.cam, IMAQdxCameraControlMode.CameraControlModeController);
+		}catch(VisionException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
 		//Set the resolution of the camera to 640x480
 		NIVision.IMAQdxSetAttributeString(session, ATTR_VIDEO_MODE, "640x480 YUY2 30.00fps");
 		

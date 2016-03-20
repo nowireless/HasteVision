@@ -63,15 +63,12 @@ public class VisionProcessWrapper implements ImageProcess {
 		vision.draw(processedFrame);
 	}
 
-	private final Image binRgb = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
 	
 	@Override
 	public void update(FrameUpdatable updatable) {
 		//log.info("Updating");
 		updatable.updateProcessed(processedFrame);
-		NIVision.imaqSetImageSize(binRgb, 640, 480);
-		NIVision.imaqReplaceColorPlanes(binRgb, binRgb, ColorMode.RGB, vision.getDebugFrame(), vision.getDebugFrame(), vision.getDebugFrame());
-		updatable.updateDebug(binRgb);
+		updatable.updateDebug(vision.getDebugFrame());
 	}
 	
 }

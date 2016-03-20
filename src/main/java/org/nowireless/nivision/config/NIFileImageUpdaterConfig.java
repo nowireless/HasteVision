@@ -1,5 +1,5 @@
 
-package org.nowireless.nivision;
+package org.nowireless.nivision.config;
 
 import org.nowireless.configstore.Config;
 

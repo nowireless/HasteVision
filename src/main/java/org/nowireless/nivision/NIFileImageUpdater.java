@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.Validate;
 import org.nowireless.common.util.TimerDelta;
+import org.nowireless.nivision.config.NIFileImageUpdaterConfig;
 import org.nowireless.vision.api.imagedriver.annotation.IDriver;
 import org.nowireless.vision.runtime.imagedriver.ImageDriverAbstract;
 

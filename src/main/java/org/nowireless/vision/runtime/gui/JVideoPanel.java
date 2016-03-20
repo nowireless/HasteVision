@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 
 import org.nowireless.common.Initializable;
 import org.nowireless.common.gui.BufferedImageCache;
-import org.nowireless.vision.runtime.NiImageUtil;
+import org.nowireless.nivision.NiImageUtil;
 
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.GetImageSizeResult;

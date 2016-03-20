@@ -1,4 +1,4 @@
-package org.nowireless.vision.runtime;
+package org.nowireless.nivision;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -70,11 +70,20 @@ public class NiImageUtil {
 		ByteBuffer buff = data.getBuffer();
 		int type = getImageType(buff);
 		
-		if(type != 4) {
+		switch (type) {
+		case 0:
+			return handleGrayImage(buff, data, cache);
+		case 4:
+			return handleRGBImage(buff, data, cache);
+		default:
 			data.free();
-			throw new IllegalArgumentException("Must be a rgb image");
+			throw new IllegalArgumentException("Invalid Image type");
 		}
 		
+		
+	}
+	
+	private static BufferedImage handleRGBImage(ByteBuffer buff, RawData data, BufferedImageCache cache) {
 		int width = getWidth(buff);
 		int height = getHeight(buff);
 		int dataSize = getDataSize(buff);
@@ -117,6 +126,38 @@ public class NiImageUtil {
 		return ret;
 	}
 	
-	
+	private static BufferedImage handleGrayImage(ByteBuffer buff, RawData data, BufferedImageCache cache) {
+		int width = getWidth(buff);
+		int height = getHeight(buff);
+		int dataSize = getDataSize(buff);
+		int paddingSize = calculateImagePadding(dataSize, width, height, 1);
+		
+		BufferedImage ret = cache.get(BufferedImage.TYPE_BYTE_GRAY, 1, height, width);
+		final byte[] targetPixels = ((DataBufferByte) ret.getRaster().getDataBuffer()).getData();
+		
+		int pos = 0;
+    	
+    	buff.position(DATA_START_BYTE);
+    	//System.out.println(buff.remaining());
+    	for(int i = 0; i < height; i++) {
+    		//Loop through the height//Rows of the image
+    		//System.out.println("Height "+i);
+	    	for(int j = 0; j < width; j++) {
+	    		//System.out.println("Height "+i + " Width "+j+ " Pos: "+pos+" Remaining " + buff.remaining());
+		    	//Read the Width/columns pixel in a row
+	    		byte val = buff.get();
+	    		//Welp here we are turning this into a Binary image now
+	        	if(val > 0) {
+	        		targetPixels[pos++]= Byte.MAX_VALUE;
+	        	} else {
+	        		targetPixels[pos++]= 0;
+	        	}
+	    	}
+	    	buff.position(buff.position()+paddingSize);
+    		//Throw away the padding bytes
+	    }
+		data.free();
+		return ret;		
+	}
 	
 }
