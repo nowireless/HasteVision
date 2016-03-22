@@ -1,0 +1,5 @@
+{
+  "useNT": false,
+  "processClassName": "com.kennedyrobotics.vision.pc.VisionProcessWrapper",
+  "imageDriverClassName": "org.nowireless.nivision.NICameraUpdater"
+}
