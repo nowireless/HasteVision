@@ -28,8 +28,7 @@ public class Vision2016 {
 	public static final double TARGET_WIDTH = 20;
 	
 	private Image binaryFrame;
-	private Image filteredImage;
-	private Image convexedImage;
+	private Image debugFrame;
 	private final Config config;
 	private final ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	private final ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);//False, False, True, True
@@ -38,7 +37,7 @@ public class Vision2016 {
 	private ParticleReport target;
 
 	public Image getDebugFrame() {
-		return filteredImage;
+		return debugFrame;
 	}
 	
 	private volatile boolean targetPresent = false;
@@ -49,6 +48,16 @@ public class Vision2016 {
 	private volatile double targetDistance = 0.0;
 	public double getTargetDistance() {
 		return targetDistance;
+	}
+	
+	private volatile int numberOfParticles = 0;
+	public int getNumberOfParticles() {
+		return numberOfParticles;
+	}
+	
+	private volatile double comX = 0;
+	public double getTargetComX() {
+		return comX;
 	}
 	
 	public Config getConfig() {
@@ -68,8 +77,7 @@ public class Vision2016 {
 	 */
 	public void init() {
 		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
-		filteredImage =NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
-		convexedImage = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
+		debugFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
 		this.reset();
 	}
 	
@@ -86,7 +94,7 @@ public class Vision2016 {
 	public void reset() {
 //		targetPresent = false;
 		target = null;
-		targetDistance = 0.0;
+//		targetDistance = 0.0;
 	}
 	
 	/**
@@ -96,7 +104,8 @@ public class Vision2016 {
 	public void process(Image image) {
 		this.reset();
 		NIVision.imaqColorThreshold(binaryFrame, image, 255, ColorMode.HSV, config.hueRange, config.saturationRange, config.valueRange);
-		
+		NIVision.imaqDuplicate(debugFrame, binaryFrame);
+
 		float areaMin = (float) AREA_MINIMUM;
 		criteria[0] = new ParticleFilterCriteria2();
 		criteria[0].parameter = MeasurementType.MT_AREA;
@@ -107,27 +116,27 @@ public class Vision2016 {
 		
 		filterOptions.rejectMatches = 1;//True
 		
+		NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
 		
-		NIVision.imaqParticleFilter4(filteredImage, binaryFrame, criteria, filterOptions, null);
+		NIVision.imaqConvexHull(binaryFrame, binaryFrame, 0);
 		
-		NIVision.imaqConvexHull(convexedImage, filteredImage, 0);
-//		NIVision.imaqDuplicate(debugFrame, binaryFrame);
-		
-		int numParticlesAfter = NIVision.imaqCountParticles(convexedImage, 1);
-	
-		System.out.println("Particles " + numParticlesAfter);
+		int numParticlesAfter = NIVision.imaqCountParticles(binaryFrame, 1);
+		numberOfParticles = numParticlesAfter;
+//		System.out.println("Particles " + numParticlesAfter);
 		
 		if(0 < numParticlesAfter) {
 			List<ParticleReport> particles = new ArrayList<ParticleReport>();
 			for(int particleIndex = 0; particleIndex < numParticlesAfter; particleIndex++) {
 				ParticleReport par = new ParticleReport();
 				par.index = particleIndex;
-				par.percentAreaToImageArea = NIVision.imaqMeasureParticle(convexedImage, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
-				par.area = NIVision.imaqMeasureParticle(convexedImage, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
-				par.boundingRectTop = NIVision.imaqMeasureParticle(convexedImage, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
-				par.boundingRectLeft = NIVision.imaqMeasureParticle(convexedImage, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
-				par.boundingRectBottom = NIVision.imaqMeasureParticle(convexedImage, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
-				par.boundingRectRight = NIVision.imaqMeasureParticle(convexedImage, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
+				par.percentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
+				par.area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
+				par.boundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
+				par.boundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
+				par.boundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
+				par.boundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
+				par.comX = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_CENTER_OF_MASS_X);
+				par.comY = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_CENTER_OF_MASS_Y);
 				particles.add(par);
 			}
 			
@@ -153,7 +162,7 @@ public class Vision2016 {
 			scores.aspect = this.aspectScore(reports.get(0));
 			scores.area = this.areaScore(reports.get(0));
 			
-			System.out.println(scores);
+//			System.out.println(scores);
 			
 			//Determine whether this particle is the target
 			targetPresent = this.isTarget(scores);
@@ -161,9 +170,11 @@ public class Vision2016 {
 			if(targetPresent) {
 				target = reports.get(0);
 				targetDistance = this.computeDistance(binaryFrame, target);
-				System.out.println("Dist: " + targetDistance);
+				comX = target.comX;
+//				System.out.println("Dist: " + targetDistance);
 			} else {
 				target = null;
+				targetDistance = 0.0;
 			}
 		}
 
@@ -171,7 +182,7 @@ public class Vision2016 {
 	
 	/**
 	 * Will Draw info onto the image to be displayed
-	 * At the moment it will place a redish rectangle on top of the target
+	 * At the moment it will place a green rectangle on top of the target
 	 * @param dest Image to draw on
 	 */
 	public void draw(Image dest) {
@@ -223,7 +234,7 @@ public class Vision2016 {
 			top.free();
 			bottom.free();
 		}
-//		this.drawCrossHairs(dest);
+		this.drawCrossHairs(dest);
 
 	}
 	
@@ -244,14 +255,14 @@ public class Vision2016 {
 		NIVision.imaqDrawLineOnImage(dest, dest, DrawMode.DRAW_VALUE, one, two, 70000);
 		
 		//Draw the horizontal line
-		one.x = 0;
-		one.y = ret.height/2;
-		one.write();
-		
-		two.x = ret.width;
-		two.y = ret.height/2;
-		two.write();
-		NIVision.imaqDrawLineOnImage(dest, dest, DrawMode.DRAW_VALUE, one, two, 70000);
+//		one.x = 0;
+//		one.y = ret.height/2;
+//		one.write();
+//		
+//		two.x = ret.width;
+//		two.y = ret.height/2;
+//		two.write();
+//		NIVision.imaqDrawLineOnImage(dest, dest, DrawMode.DRAW_VALUE, one, two, 70000);
 		
 		one.free();
 		two.free();
@@ -306,13 +317,11 @@ public class Vision2016 {
 	 * @return The estimated distance to the target in feet.
 	 */
 	private double computeDistance (Image image, ParticleReport report) {
-		double normalizedWidth;
-		NIVision.GetImageSizeResult size;
-
-		size = NIVision.imaqGetImageSize(image);
-		normalizedWidth = 2*(report.boundingRectRight - report.boundingRectLeft)/size.width;
-
-		return  TARGET_WIDTH/(normalizedWidth*12*Math.tan(VIEW_ANGLE*Math.PI/(180*2)));
+		double width = report.boundingRectRight-report.boundingRectLeft;
+//		SmartDashboard.putNumber("target width", width);
+		
+		return 2694.4 * Math.pow(width , -1.192);
+		
 	}
 	
 }

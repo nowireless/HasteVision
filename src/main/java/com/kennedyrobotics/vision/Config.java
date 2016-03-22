@@ -8,6 +8,8 @@ import com.ni.vision.NIVision.Range;
 	 *
 	 */
 	public class Config {
+		
+		//Set the visoin values here:
 		public static final int DEFAULT_MIN_H = 0;
 		public static final int DEFAULT_MIN_S = 0;
 		public static final int DEFAULT_MIN_V = 0;
@@ -23,6 +25,11 @@ import com.ni.vision.NIVision.Range;
 		
 		public double areaScoreMin = DEFAULT_AREA_SCORE;
 		public double aspectRatioScoreMin = DEFAULT_ASPECT_SCORE;
+		
+		public Config() {
+			this.setRageMin(DEFAULT_MIN_H, DEFAULT_MIN_S, DEFAULT_MIN_V);
+			this.setRageMax(DEFAULT_MAX_H, DEFAULT_MAX_S, DEFAULT_MAX_H);
+		}
 		
 		public void setRageMin(int h, int s, int v) {
 			hueRange.minValue = h;
