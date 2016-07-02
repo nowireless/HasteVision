@@ -14,7 +14,6 @@ import org.nowireless.vision.api.process.annotations.Process;
 import com.google.common.collect.ImmutableList;
 import com.kennedyrobotics.vision.Vision2016;
 import com.ni.vision.NIVision;
-import com.ni.vision.NIVision.ColorMode;
 import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
 

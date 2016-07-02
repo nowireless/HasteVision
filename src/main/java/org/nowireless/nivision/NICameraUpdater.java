@@ -1,6 +1,8 @@
 package org.nowireless.nivision;
 
 import org.nowireless.configstore.ConfigStore;
+import org.nowireless.imaqdx.IMAQdx;
+import org.nowireless.imaqdx.IMAQdx.IMAQdxCameraInformationArray;
 import org.nowireless.nivision.config.NICameraUpdaterConfig;
 import org.nowireless.nivision.config.NICameraUpdaterConfigStore;
 import org.nowireless.vision.api.imagedriver.annotation.IDriver;
@@ -32,15 +34,26 @@ public class NICameraUpdater extends ImageDriverAbstract {
 
 	@Override
 	public void init() {
-		NICameraUpdaterConfigStore store = new NICameraUpdaterConfigStore();
-		store.init();
-		NICameraUpdaterConfig config = store.get(ConfigStore.INSTANCE);
-		if(config == null) {
-			config = store.create(ConfigStore.INSTANCE);
+//		NICameraUpdaterConfigStore store = new NICameraUpdaterConfigStore();
+//		store.init();
+//		NICameraUpdaterConfig config = store.get(ConfigStore.INSTANCE);
+//		if(config == null) {
+//			config = store.create(ConfigStore.INSTANCE);
+//		}
+		System.loadLibrary("IMAQdxJava");
+		
+		int count = IMAQdx.IMAQdxEnumerateCameras(null, true);
+		if(count == 0) {
+			log().fatal("No cameras");
+			System.exit(-1);
 		}
+		IMAQdxCameraInformationArray array = new IMAQdxCameraInformationArray(count);
+		IMAQdx.IMAQdxEnumerateCameras(array, true);
+		String intName = array.get(0).interfaceName();
+		
 		
 		try {
-			session = NIVision.IMAQdxOpenCamera(config.cam, IMAQdxCameraControlMode.CameraControlModeController);
+			session = NIVision.IMAQdxOpenCamera(intName, IMAQdxCameraControlMode.CameraControlModeController);
 		}catch(VisionException e) {
 			e.printStackTrace();
 			System.exit(-1);

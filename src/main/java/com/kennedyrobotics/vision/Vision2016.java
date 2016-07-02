@@ -24,7 +24,7 @@ import com.ni.vision.NIVision.ShapeMode;
 public class Vision2016 {
 	
 	public static final double AREA_MINIMUM = 150;
-	public static final double VIEW_ANGLE = 60; //View angle fo camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
+//	public static final double VIEW_ANGLE = 60; //View angle fo camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
 	public static final double TARGET_WIDTH = 20;
 	
 	private Image binaryFrame;
@@ -58,6 +58,11 @@ public class Vision2016 {
 	private volatile double comX = 0;
 	public double getTargetComX() {
 		return comX;
+	}
+	
+	private volatile double angleToTurn;
+	public double getAngleToTurn() {
+		return angleToTurn;
 	}
 	
 	public Config getConfig() {
@@ -104,8 +109,7 @@ public class Vision2016 {
 	public void process(Image image) {
 		this.reset();
 		NIVision.imaqColorThreshold(binaryFrame, image, 255, ColorMode.HSV, config.hueRange, config.saturationRange, config.valueRange);
-		NIVision.imaqDuplicate(debugFrame, binaryFrame);
-
+		
 		float areaMin = (float) AREA_MINIMUM;
 		criteria[0] = new ParticleFilterCriteria2();
 		criteria[0].parameter = MeasurementType.MT_AREA;
@@ -117,6 +121,8 @@ public class Vision2016 {
 		filterOptions.rejectMatches = 1;//True
 		
 		NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
+		
+		NIVision.imaqDuplicate(debugFrame, binaryFrame);
 		
 		NIVision.imaqConvexHull(binaryFrame, binaryFrame, 0);
 		
@@ -153,6 +159,9 @@ public class Vision2016 {
 	public void score(List<ParticleReport> reports) {
 		if(reports == null) {
 			targetPresent = false;
+			targetDistance = 0.0;
+			angleToTurn = 0.0;
+
 		} else {
 			
 			//Sorts the particles from Biggest to smallest areas
@@ -171,13 +180,16 @@ public class Vision2016 {
 				target = reports.get(0);
 				targetDistance = this.computeDistance(binaryFrame, target);
 				comX = target.comX;
-//				System.out.println("Dist: " + targetDistance);
+//				angleToTurn = this.computeAngleToTurn(targetDistance, comX,640);
+				System.out.println("Dist: " + targetDistance);
+				System.out.println("Angle: " + angleToTurn);
 			} else {
 				target = null;
 				targetDistance = 0.0;
+				angleToTurn = 0.0;
 			}
 		}
-
+ 
 	}
 	
 	/**
@@ -229,6 +241,10 @@ public class Vision2016 {
 			NIVision.imaqDrawShapeOnImage(dest, dest, top, DrawMode.PAINT_VALUE, ShapeMode.SHAPE_RECT, 50500);
 			NIVision.imaqDrawShapeOnImage(dest, dest, bottom, DrawMode.PAINT_VALUE, ShapeMode.SHAPE_RECT, 50500);
 
+			Rect vertical = new Rect(0, (int)comX-2, 480, 4);
+			NIVision.imaqDrawShapeOnImage(dest, dest, vertical, DrawMode.PAINT_VALUE, ShapeMode.SHAPE_RECT, 1000);
+			vertical.free();
+			
 			left.free();
 			right.free();
 			top.free();
@@ -323,5 +339,21 @@ public class Vision2016 {
 		return 2694.4 * Math.pow(width , -1.192);
 		
 	}
+	
+//    public double computeAngleToTurn(double distance, double comX, int imageWidth) {
+//    	double theta = -0.9709*distance + 61.587;
+//    	double fovFt = 2.0 * (Math.tan(Math.toRadians(0.5 * theta)));
+//    	double fovPixel = imageWidth;
+//    	double ftPerPixel = fovFt / fovPixel;
+//    	double delta = (imageWidth/2 - comX) * ftPerPixel;
+//    	double angle = Math.toDegrees(Math.atan2(delta, distance));
+//    	return angle;
+//    	
+////		double fov = 2*distance * Math.tan(Math.toRadians(1/2*Vision2016.VIEW_ANGLE));
+////		double ftPerPix = fov/640;
+////		double delta = 640/2 - comX;
+////		delta *= ftPerPix;
+////		return Math.toDegrees(Math.atan2(distance, delta));
+//	}
 	
 }

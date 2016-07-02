@@ -66,7 +66,7 @@ public class SimpleFrame extends JFrame {
 		
 	}
 	
-
+	
 	private class MenuConfigImageProcessSelectionListener implements ActionListener {
 		
 		@Override
@@ -120,6 +120,7 @@ public class SimpleFrame extends JFrame {
 	private final JRadioButtonMenuItem mntmDebug;
 	
 	private final JMenu mnConfig;
+	private final JMenu mnView;
 	
 	private ProcessSelectorDialog processDialog;
 	private ImageDriverSelectorDialog imageDriverDialog;
@@ -186,6 +187,9 @@ public class SimpleFrame extends JFrame {
 		mntmImageDriverSelection.addActionListener(new MenuConfigImageDriverSelectionListener());
 		mnConfig.add(mntmImageDriverSelection);
 		
+		mnView = new JMenu("View");
+		menuBar.add(mnView);
+				
 		JMenu mnHelp = new JMenu("Help");
 		menuBar.add(mnHelp);
 		
@@ -282,6 +286,12 @@ public class SimpleFrame extends JFrame {
 			JMenuItem item = new JMenuItem(popup.getName());
 			item.addActionListener(popup);
 			mnConfig.add(item);
+		}
+	}
+	
+	public void addViewMenuItems(List<JMenuItem> items) {
+		for(JMenuItem item:items) {
+			mnView.add(item);
 		}
 	}
 }
